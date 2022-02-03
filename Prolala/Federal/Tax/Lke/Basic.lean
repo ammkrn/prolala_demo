@@ -54,7 +54,6 @@ deriving Repr
 structure LkeResult where
   completionDate : Date
   recognizedGainLoss : NonnegMoney
-  deferredGainLoss : Money
   basisIncomingLkp : Money
   basisIncomingBootProperty : NonnegMoney
   relatedPartySunsetDate : Option Date
@@ -97,8 +96,6 @@ def BaseLke.otherRecognizedGainLoss := (sum txn.outgoingOtherPropertyFmv).val - 
 
 def BaseLke.recognizedGainLoss := max 0 (min (incomingBoot txn) (realizedGainLoss txn))
 
-def BaseLke.deferredGainLoss := realizedGainLoss txn - recognizedGainLoss txn
-
 def BaseLke.totalBasisIncoming := 
   if txn.outgoingOtherPropertyAb.isEmpty
   then adjustedBasis txn - incomingMoney txn + recognizedGainLoss txn
@@ -133,7 +130,6 @@ instance : Explain LkeResult where
     ++ "\n"
     ++ "Result to taxpayer:\n"
     ++ s!"Taxpayer's recognized gain or loss is ${r.recognizedGainLoss}\n"
-    ++ s!"Taxpayer's deferred gain or loss is ${r.deferredGainLoss}\n"
     ++ s!"Taxpayer's basis in the incoming like-kind property is ${r.basisIncomingLkp}\n"
     ++ s!"taxpayer's basis in the incoming non-like-kind property is ${r.basisIncomingBootProperty}\n"
 
@@ -141,7 +137,6 @@ def BaseLke.taxResult : LkeResult :=
   {
     completionDate := txn.completionDate
     recognizedGainLoss := ⟨txn.recognizedGainLoss, le_max_left 0 _⟩
-    deferredGainLoss := txn.deferredGainLoss
     basisIncomingLkp := txn.basisIncomingLkp
     basisIncomingBootProperty := txn.basisIncomingBootProperty
     relatedPartySunsetDate := 
@@ -155,7 +150,6 @@ def BaseLke.taxResultM : StateT String Id LkeResult := do
   let r := {
     completionDate := txn.completionDate
     recognizedGainLoss := ⟨txn.recognizedGainLoss, le_max_left 0 _⟩
-    deferredGainLoss := txn.deferredGainLoss
     basisIncomingLkp := txn.basisIncomingLkp
     basisIncomingBootProperty := txn.basisIncomingBootProperty
     relatedPartySunsetDate := 
@@ -596,8 +590,3 @@ def BaseLke.tryFrom
       h_outgoing_other_property := not_not.mp h_outgoing_other_property
       h_num := not_not.mp h_num
     }
-
-
-
-
-
