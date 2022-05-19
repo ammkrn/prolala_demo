@@ -283,3 +283,13 @@ partial def List.qsortBy {A : Type u} {B : Type v} [LT B] [DecidableRel (.<. : B
 | h :: t =>
   let (xs, ys) := t.partition (fun x => f x < f h)
   qsortBy f xs ++ [h] ++ qsortBy f ys
+
+-- mathlib 3 group.
+theorem eq_add_of_sub_eq {a b c : Int} (h : a - c = b) : a = b + c := sorry
+
+-- linarith closes this.
+theorem linarith0 (a z x q : Int) : a - (z + x - q) = q + a - z - x := sorry
+
+theorem linarith1 (a b c d e : Int) : a + b + c + d - (b + c + d + e) = a - e := by
+  rw [(show a + b + c + d = a + (b + c + d) by repeat rw [add_assoc]), Int.add_sub_assoc a (b + c + d)]
+  simp [sub_add_eq_sub_sub, Int.sub_self, <- Int.add_sub_assoc]

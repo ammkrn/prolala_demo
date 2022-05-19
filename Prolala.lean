@@ -2,7 +2,6 @@ import Prolala.Util
 import Prolala.Time
 import Prolala.Federal.Sources
 import Prolala.Federal.Tax.Util
-import Prolala.Federal.Tax.Lke.Basic
 import Prolala.Federal.Tax.Lke.Worksheet
 import Prolala.Federal.Tax.PrinRes
 import Prolala.Federal.Civpro.Appeal.Defs

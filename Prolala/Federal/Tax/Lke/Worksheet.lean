@@ -164,11 +164,51 @@ abbrev incomingBoot := line15
 abbrev amtRealized := line17
 abbrev adjustedBasis := line18
 abbrev realizedGainLoss := line19
-abbrev lkpRecognizedGainLoss :=  line23
+abbrev recognizedGainLoss :=  line23
 abbrev deferredGainLoss :=  line24
 abbrev basisIncomingLkp := line25
 abbrev basisIncomingOtherProperty := sum form.incomingOtherPropertyFmv
-abbrev totalRecognizedGainLoss := form.lkpRecognizedGainLoss + form.outgoingOtherPropertyRecognizedGainLoss
+abbrev totalRecognizedGainLoss := form.recognizedGainLoss + form.outgoingOtherPropertyRecognizedGainLoss
+
+class StandardDeferral (A : Type u) where
+  aggregateFmvReceived : A → Money
+  aggregateBasisAfter : A → Money
+  realizedGainOrLoss : A → Money
+  recognizedGainOrLoss : A → Money
+  deferredGainOrLoss : A → Money
+  deferredGainLossCheck1 f : deferredGainOrLoss f + recognizedGainOrLoss f = realizedGainOrLoss f
+  deferredGainLossCheck2 f : aggregateFmvReceived f - aggregateBasisAfter f = deferredGainOrLoss f
+
+instance : StandardDeferral Form8824.Part3 where
+  /-
+  Incoming cash, and outgoing liabilities because assumption of liability is treated as 
+  receipt of cash.
+  Incoming like-kind and boot property at their fair market value.
+  -/
+  aggregateFmvReceived f := 
+    f.incomingLkpFmv + f.incomingCash + f.outgoingLiabilities + sum f.incomingOtherPropertyFmv
+  /-
+  incoming cash and outgoing liabilities, because they're treated like cash, which has 
+  a basis equal to its fair market value.
+  The fair market value of incoming boot property, because it's being acquired at fair market value.
+  Plus the basis in the incoming like-kind property.
+  -/
+  aggregateBasisAfter f :=
+    f.incomingCash + f.outgoingLiabilities + sum f.incomingOtherPropertyFmv + f.basisIncomingLkp
+  realizedGainOrLoss f := f.realizedGainLoss
+  recognizedGainOrLoss f := f.recognizedGainLoss
+  deferredGainOrLoss f := f.deferredGainLoss
+  deferredGainLossCheck1 f := Int.sub_add_cancel _ _
+  deferredGainLossCheck2 f := by
+    have h1 :=
+      linarith1
+        f.toBaseLke.incomingLkpFmv.val  
+        f.toBaseLke.incomingCash.val 
+        f.toBaseLke.outgoingLiabilities.val 
+        (sum f.toBaseLke.incomingOtherPropertyFmv) 
+        f.basisIncomingLkp
+    simp [h1]
+    exact linarith0 _ _ _ _
 
 def fromBase (b : BaseLke) : Form8824.Part3 := 
   { b with transactionCostsIncurred := 0, recapture1245 := 0, recapture1250 := 0 }
@@ -318,7 +358,7 @@ def stockExample : Form8824.Part3 :=
     timingOk3 := by decide
   }
 
-example : stockExample.lkpRecognizedGainLoss = 0 := rfl
+example : stockExample.recognizedGainLoss = 0 := rfl
 example : stockExample.line12 = 2000 := rfl
 example : stockExample.line13 = 4000 := rfl
 example : stockExample.line14 = -2000 := rfl
@@ -420,9 +460,11 @@ def «CFR 1.1031(d)-1 example 2» : Form8824.Part3 :=
     timingOk2 := by decide
     timingOk3 := by decide
   }
+
 theorem «CFR 1.1031(d)-1 example 2_1» : basisIncomingLkp «CFR 1.1031(d)-1 example 2» = 12000 := rfl
 theorem «CFR 1.1031(d)-1 example 2_2» : line14 «CFR 1.1031(d)-1 example 2» = -2000 := rfl
-theorem «CFR 1.1031(d)-1 example 2_3» : lkpRecognizedGainLoss «CFR 1.1031(d)-1 example 2» = 0 := rfl
+theorem «CFR 1.1031(d)-1 example 2_3» : recognizedGainLoss «CFR 1.1031(d)-1 example 2» = 0 := rfl
+
 /- 
 At this point, they're getting a FMV 11000 property for an adjustedBasis 
 10000 property, so there's a $1000 deferred gain. 
